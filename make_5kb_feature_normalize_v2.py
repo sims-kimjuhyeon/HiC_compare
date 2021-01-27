@@ -19,6 +19,7 @@ cov40kbfile = '{}/{}.40kb.sort.coverage'.format(datadir, samplename)
 
 chrlist = ['chr' + str(i+1) for i in range(22)]
 chrlist.append('chrX')
+chrlist.append('chrY')
 
 coverage_40kbdict = {}
 f = open(cov40kbfile)
@@ -105,15 +106,9 @@ def make_Feature(chr_bamfile, coverage_40kbdict, coverage_5kbfile, cis_savefile,
 	for line in bam.fetch():
 		start_chrnum = int(line.reference_id) + 1
 		end_chrnum = int(line.next_reference_id) + 1
-		if start_chrnum < 25 and end_chrnum < 25 and line.is_read1==True:
-
-			if start_chrnum == 23: start_chrnum = 'X'
-			if start_chrnum == 24: start_chrnum = 'Y'
-			pos1_chr= 'chr' + str(start_chrnum)
-
-			if end_chrnum == 23: end_chrnum = 'X'
-			if end_chrnum == 24: end_chrnum = 'Y'
-			pos2_chr= 'chr' + str(end_chrnum)
+		if line.is_read1==True:
+			pos1_chr=  bam.get_reference_name(line.reference_id)
+			pos2_chr= bam.get_reference_name(line.next_reference_id)
 
 			if pos1_chr == pos2_chr:
 				bin5kb_1  = (int(line.reference_start)/5000)
@@ -180,6 +175,8 @@ def make_Feature(chr_bamfile, coverage_40kbdict, coverage_5kbfile, cis_savefile,
 
 			i_start = h
 			i_end = h + 2000000
+			if i_end > bin_max:
+                i_end = bin_max
 			
 			while i_start <= i_end:
 				frag1 = h
@@ -244,14 +241,14 @@ if __name__ == '__main__':
 		outbamfile = [input_bam.split('.')[0], chrname, 'bam']
 		outbamfilepath = '{}/{}'.format(output_dir, '.'.join(outbamfile))
 		chrbamlist.append(outbamfilepath)
-	"""
+
 		proc = mp.Process(target=bam_chr_split, args=(input_bam_path, chrname, outbamfilepath))
 		procs.append(proc)
 		proc.start()
 	#
 	for proc in procs: proc.join()
-	#"""
-	"""
+
+
 	procs = []
 	for chrbampath in chrbamlist:
 		proc = mp.Process(target=bam_chr_index, args=(chrbampath,))
@@ -263,7 +260,7 @@ if __name__ == '__main__':
 	procs = []
 	cisfeature_list_40kb = []
 	cisfeature_list_5kb = []
-	#"""
+
 	#"""	
 	for chrbampath in chrbamlist:
 		output_dir, input_bam = os.path.split(chrbampath)
